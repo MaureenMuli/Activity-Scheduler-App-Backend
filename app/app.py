@@ -335,7 +335,7 @@ class ActivitiesByDate(Resource):
 
         return make_response({"activities": activities_dict}, 200)
 
-api.add_resource(Activities, '/activities/<string:time_frame>')
+api.add_resource(ActivitiesByDate, '/activities/<string:time_frame>')
 
 if __name__ == '__main__':
     app.run(debug=True, port=5500)
