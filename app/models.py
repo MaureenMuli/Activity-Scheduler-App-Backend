@@ -66,7 +66,7 @@ class Activity(db.Model, SerializerMixin):
     title = db.Column(db.String(), nullable=False)
     description = db.Column(db.Text(), nullable=False)
     reviews = db.Column(db.Text(), nullable=True)
-    rating= db.Column(db.Interger(), nullable=True)
+    rating= db.Column(db.Integer(), nullable=True)
     location = db.Column(db.String(), nullable=False)
     category = db.Column(db.String(), nullable=False, default='General')
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now(timezone.utc))
