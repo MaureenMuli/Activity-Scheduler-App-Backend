@@ -10,5 +10,5 @@ def execute_sql(sql):
 if __name__ == '__main__':
     with app.app_context():
         print('Clearing database...')
-        execute_sql('TRUNCATE TABLE users, journals RESTART IDENTITY CASCADE')
+        execute_sql('TRUNCATE TABLE users, activities RESTART IDENTITY CASCADE')
         print('Database cleared!')

@@ -16,7 +16,6 @@ from models import db, User, Activity
 app = Flask(__name__)
 load_dotenv()
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URI')
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.json.compact = False
 
@@ -252,6 +251,91 @@ class Activities(Resource):
         return make_response(activity.to_dict(), 201)
 
 api.add_resource(Activities, '/activities')
+
+# Activity By ID (get patch delete)
+class ActivityByID(Resource):
+    @jwt_required()
+    def get(self, id):
+        activity = Activity.query.filter_by(id=id).first()
+        if activity is None:
+            return {"error": "Activity not found"}, 404
+        response_dict = activity.to_dict()
+        return make_response(response_dict, 200)
+   
+    @jwt_required()
+    def patch(self, id):
+        activity = Activity.query.filter_by(id=id).first()
+        if activity is None:
+            return {"error": "Activity not found"}, 404
+
+        data = request.get_json()
+        if not data:
+            return {"error": "Missing data in request"}, 400
+
+        if 'title' in data:
+            activity.title = data['title']
+        if 'description' in data:
+            activity.body = data['description']
+        if 'reviews' in data:
+            activity.body = data['reviews']
+        if 'rating' in data:
+            activity.body = data['rating']
+        if 'location' in data:
+            activity.body = data['location']
+        if 'category' in data:
+            activity.category = data['category']
+        if 'created_at' in data:
+            activity.created_at = data['created_at']
+
+        try:
+            db.session.commit()
+            return make_response(activity.to_dict(), 200)
+        except AssertionError:
+            return {"errors": ["validation errors"]}, 400
+
+    @jwt_required()
+    def delete(self, id):             
+        activity = Activity.query.filter_by(id=id).first()
+        if activity is None:
+            return {"error": "Activity not found"}, 404
+        
+       
+        activity = Activity.query.get_or_404(id)
+        db.session.delete(activity)
+        db.session.commit()
+        return make_response({'message': 'Activity deleted successfully'})
+         
+api.add_resource(ActivityByID, '/activity/<int:id>')
+
+# Activities By Date
+class ActivitiesByDate(Resource):
+    @jwt_required()
+    def get(self, time_frame):
+        user_id = get_jwt_identity().get('id')
+        if not user_id:
+            return make_response({"error": "Unauthorized"}, 401)
+
+        now = datetime.now(timezone.utc)
+        if time_frame == 'all':
+            activities = Activity.query.filter_by(user_id=user_id).all()
+        else:
+            start_of_today = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            if time_frame == 'daily':
+                start_date = start_of_today
+            elif time_frame == 'weekly':
+                start_date = start_of_today - timedelta(days=now.weekday())
+            elif time_frame == 'monthly':
+                start_date = start_of_today.replace(day=1)
+            else:
+                return make_response({"error": "Invalid time frame"}, 400)
+
+            activities = Activity.query.filter(Activity.user_id == user_id, Activity.created_at >= start_date, Activity.created_at <= now).all()
+
+        activities_dict = [activity.to_dict() for activity in activities]
+
+        return make_response({"activities": activities_dict}, 200)
+
+api.add_resource(Activities, '/activities/<string:time_frame>')
 
 if __name__ == '__main__':
     app.run(debug=True, port=5500)
